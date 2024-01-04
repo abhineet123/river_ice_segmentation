@@ -29,6 +29,8 @@ bar_plot = 0;
 % 2: normalize by norm_factor, 
 % 3: extend in both directions using the max X and Y and discarding annoying anomalous outlier values
 enable_auc = 3;
+% if enable_auc=3, plot the extended x, y data used for computing the AUC instead of the original data
+plot_ext = 1;
 
 norm_factor = 100;
 
@@ -163,6 +165,9 @@ if rec_prec_mode
     
     x_data = zeros(n_items, n_lines);
     y_data = zeros(n_items, n_lines);
+        
+    x_auc_data = zeros(n_items+2, n_lines);
+    y_auc_data = zeros(n_items+2, n_lines);
     
     fileID = fopen(fname,'r');
     plot_title = fscanf(fileID,'%s', 1);
@@ -267,7 +272,7 @@ if rec_prec_mode
 				auc_X = X;
 				auc_Y = Y;
 				
-				% find the row where recall becomes maximum and copy this role into any rows before it while making the precision 0 and leaving the recall be
+				% find the row where recall becomes maximum and copy this row into any rows before it while making the precision 0 and leaving the recall be
 				[max_x, max_x_ind] = max(auc_X);
 				if max_x_ind == 1		
 					auc_X = [max_x; auc_X];
@@ -277,8 +282,10 @@ if rec_prec_mode
 						auc_X(i__) = max_x;
 						auc_Y(i__) = 0;
 					end
-
+					auc_X = [max_x; auc_X];
+					auc_Y = [0; auc_Y];
 				end
+
 
 				% find the row where the precision becomes maximum and copy this row into any rows after it while making the recall zero and leaving the position be
 				[max_y, max_y_ind] = max(auc_Y);	
@@ -293,7 +300,12 @@ if rec_prec_mode
 						auc_Y(i__) = max_y;
 						auc_X(i__) = 0;
 					end
+					auc_Y = [auc_Y; max_y];
+					auc_X = [auc_X; 0];
 				end
+
+				x_auc_data(:, line_id) = auc_X;
+				y_auc_data(:, line_id) = auc_Y;
 
 				auc = trapz(auc_X,auc_Y);
                 max_x = max(auc_X);
@@ -310,6 +322,14 @@ if rec_prec_mode
             plot_legend{line_id} = sprintf('%s (%.2f)', plot_legend{line_id}, norm_auc);            
         end
     end
+	if enable_auc==3 & plot_ext
+		rec_data = x_auc_data;
+		prec_data = y_auc_data;
+
+		x_data = x_auc_data;
+		y_data = y_auc_data;
+	end			
+
     if enable_ap
         [ap, mrec, mprec] = VOCap(flipud(rec_data/100.0),...
             flipud(prec_data/100.0));

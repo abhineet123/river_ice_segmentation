@@ -1,5 +1,7 @@
 from datetime import datetime
 import os
+import platform
+import sys
 import glob
 import math
 import json
@@ -12,6 +14,7 @@ import paramparse
 class Params:
 
     def __init__(self):
+        self.no_underscores = 1
         self.list_from_cb = 1
 
         # self.cfg = 'tp_fp_rec_prec'
@@ -115,7 +118,6 @@ def remove_repeated_substr(in_str, sep='_', other_seps=(':', '-')):
 
     words = in_str.split('_')
     out_str = sep.join(sorted(set(words), key=words.index))
-
     return out_str
 
 
@@ -135,6 +137,14 @@ def main():
             from tkinter import Tk
         list_path = Tk().clipboard_get()
         list_path = linux_path(list_path)
+        # py_path = sys.executable
+        # file_path = __file__
+        py_platform = platform.uname().release
+        if py_platform.endswith("microsoft-standard-WSL2"):
+            wsl_cmd = f'wslpath "{list_path}"'
+            list_path = os.popen(wsl_cmd).read().strip()
+        # print()
+
     elif params.list_path_id > 0:
         list_files = glob.glob(os.path.join(params.list_dir, f'**/*.{params.list_ext}'), recursive=True)
         list_files = sorted(list_files)
@@ -323,7 +333,7 @@ def main():
                     cmb_dfs.append(cmb_df)
 
                 all_cmb_df = pd.concat(cmb_dfs, axis=0)
-                all_cmb_df.to_csv(linux_path(out_dir, f'{metric}.csv'), sep='\t', index=False, line_terminator='\n')
+                all_cmb_df.to_csv(linux_path(out_dir, f'{metric}.csv'), sep='\t', index=False, lineterminator='\n')
                 plot_df_all = all_cmb_df
 
                 plot_df_all = plot_df_all.loc[plot_df_all["FP_threshold"] <= 10]
@@ -441,7 +451,7 @@ def main():
 
                 all_models_dfs_cc = pd.concat(all_models_dfs, axis=1)
 
-                df_txt = all_models_dfs_cc.to_csv(sep='\t', index=False, line_terminator='\n')
+                df_txt = all_models_dfs_cc.to_csv(sep='\t', index=False, lineterminator='\n')
 
                 title = f'{metric}'
 
@@ -451,6 +461,10 @@ def main():
                 title = remove_repeated_substr(title)
 
                 header1 = title + '\t' * (all_models_dfs_cc.shape[1] - 1)
+
+                if params.no_underscores:
+                    header1 = header1.replace('_', '-')
+                    header2 = header2.replace('_', '-')
 
                 out_txt = header1 + '\n' + header2 + '\n' + df_txt + f'\n'
 
@@ -470,12 +484,12 @@ def main():
                     all_max_rows_df_labeled = pd.concat((model_data_df, all_max_rows_df), axis=1)
 
                     max_df_txt = all_max_rows_df_labeled.to_csv(sep='\t', index=False, header=True,
-                                                                line_terminator='\n')
+                                                                lineterminator='\n')
 
                     models_header = '/'.join(models)
                     metrics_header = '/'.join(list(all_max_rows_df.columns))
                     max_df_txt_tr = all_max_rows_df_labeled.transpose().to_csv(sep='\t', index=True, header=False,
-                                                                               line_terminator='\n')
+                                                                               lineterminator='\n')
 
                     max_title = f'{title}_max_{params.max_by}'
 
@@ -509,7 +523,7 @@ def main():
 
                 all_metrics_dfs_cc = pd.concat(all_metrics_dfs, axis=1)
 
-                df_txt = all_metrics_dfs_cc.to_csv(sep='\t', index=False, line_terminator='\n')
+                df_txt = all_metrics_dfs_cc.to_csv(sep='\t', index=False, lineterminator='\n')
 
                 header1 = f'{model}' + '\t' * (all_metrics_dfs_cc.shape[1] - 1)
 

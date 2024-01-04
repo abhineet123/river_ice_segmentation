@@ -1,0 +1,18 @@
+SWD	#ipsc/inv-swi-nms_10
+CND	#ipsc/inv-cvnxt-large-nms_90
+IDOL	#ipsc/inv-idol-inc-probs-nms_10
+SEQ	#ipsc/inv-seq-inc-nms_10
+VITA	#ipsc/inv-vita-inc-nms_10
+P2S	p2s-resnet_640-g2_16_53-g2_0_15-batch_48-cls
+
+
+
+
+
+
+
+
+
+
+
+
