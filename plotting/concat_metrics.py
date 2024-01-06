@@ -21,7 +21,7 @@ class Params:
         # self.cfg = 'tp_fp'
         # self.cfg = 'roc_auc'
 
-        self.cfg = 'rec_prec'
+        self.cfg = 'rec_prec:diff'
 
         # self.cfg = 'roc_auc_iw'
         # self.cfg = 'auc_iw'
