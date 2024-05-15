@@ -1,0 +1,5 @@
+background	black
+ipsc	green
+diff	red
+
+cell	white	ipsc,diff

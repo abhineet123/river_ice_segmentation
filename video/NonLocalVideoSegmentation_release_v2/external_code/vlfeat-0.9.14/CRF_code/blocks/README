@@ -1,0 +1,123 @@
+BLOCKS version 0.1.1
+Brian Fulkerson and Andrea Vedaldi
+
+Changes:
+0.1.1    Added HTML documentation (folder "doc")
+         Corrected a bug in block_quickseg
+0.1      Initial release
+
+Requirements:
+
+To use Blocks you must have the following:
+  VLFeat     0.9.4.1  http://vlfeat.org/
+  GCmex      1.0      http://vision.ucla.edu/~brian/gcmex.html
+  libSVM-mat 2.89     http://www.csie.ntu.edu.tw/~cjlin/libsvm/#matlab    
+
+Getting started with Blocks:
+
+At its core, blocks is a modular framework which allows you to avoid
+repeating computation. Consider the following hello world example:
+
+% helloworld.m ======================================================
+
+% Define the location where results should be saved
+global wrd;
+wrd.prefix = 'hwtest';
+
+% Initialize and run a block of type helloworld.
+bk = bkinit('helloworld');
+bk.tag = 'helloworld@default';
+[bk dirty] = bkbegin(bk);
+if dirty
+  % Do some work
+  fprintf('Hello world!\n')
+  bk = bkend(bk);
+end
+
+% end ===============================================================
+
+Running the example once create a few folders and produces the
+output "Hello world!". Running it a second time should print
+some "up to date" messages, but otherwise do nothing. In a real world
+example, instead of printing a message, we could perform and save the
+results of some computation. The second time the program is run, we
+would have avoided recomputing.
+
+Code involving blocks requires (at minimum) three functions: bkinit,
+bkbegin, and bkend. In this hello world example, we create a block of
+type helloworld with bkinit, then begin the block with bkbegin. At
+this point, if the block is already up to date, we do nothing else.
+However, if it isn't, we perform some computation and close the block.
+
+By convention, we typically wrap bkbegin and bkinit in a block
+function. These functions start with block_, and usually perform one
+task in a pipeline (for example, extracting features). A very simple
+block function looks like:
+
+% block_test.m ======================================================
+function bk = block_test(bk, varargin)
+
+% If we do not include an argument, initialize the object.
+if nargin == 0
+  bk = bkinit('test') ;
+  bk.imsize = 50;
+  bk.fetch = @fetch__ ;
+  return ;
+end
+
+global wrd;
+
+% If the block is up-to-date, do nothing.
+[bk, dirty] = bkbegin(bk) ;
+if ~ dirty, return ; end
+
+% Do some computation
+output = vl_dsift(single(rand(bk.imsize)));
+
+% Save the results
+save(fullfile(wrd.prefix, bk.tag, 'test.mat'), 'output', '-MAT');
+
+% End the block
+bk = bkend(bk) ;
+
+% Define a function in order to allow retrieval of data from the block
+function varargout = fetch__(bk, what, varargin)
+
+global wrd;
+
+switch lower(what)    
+case 'output'
+  path = fullfile(wrd.prefix, bk.tag, 'test.mat') ;
+  data = load(path, '-MAT') ;
+  varargout{1} = data.output ;
+otherwise
+  error('block_test: Attempted to fetch unknown type');
+end
+
+% end ===============================================================
+
+There are a few things to notice here. First, the block name starts
+with block_ and ends with the name of the type of block (test). When
+the block is called without arguments, it initializes an instance
+with the block's default options and returns. When the block is called
+with an instance, it checks to see if it is up to date and performs
+some actions. The results are saved in an instance specific folder,
+and may be retrieved using the bkfetch, which in turn calls the
+block's internal fetch function. 
+
+With this in mind, we can call this block using the following pattern:
+
+% simple_test.m ======================================================
+global wrd;
+wrd.prefix = 'test';
+
+bk = block_test ;               % Initialize with default parameters
+bk.imsize = 100 ;               % Change a parameter
+bk.tag    = 'test@imresize100'; % A tag is required and identifies the
+                                % block instance
+bk = block_test(bk) ;           % Run the block
+
+% end ===============================================================
+
+The first run will execute the block, and subsequent runs will not
+re-execute the block unless either a parameter (eg. imsize) or an input to the block has changed.

@@ -1,0 +1,6 @@
+water	black
+anchor_ice	green
+frazil_ice	red
+
+ice	white	anchor_ice,frazil_ice
+

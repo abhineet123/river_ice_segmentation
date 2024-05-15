@@ -1,0 +1,8 @@
+@misc{singh2019river,
+    title={River Ice Segmentation with Deep Learning},
+    author={Abhineet Singh and Hayden Kalke and Nilanjan Ray and Mark Loewen},
+    year={2019},
+    eprint={1901.04412},
+    archivePrefix={arXiv},
+    primaryClass={cs.CV}
+}

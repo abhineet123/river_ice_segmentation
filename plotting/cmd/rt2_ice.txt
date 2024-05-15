@@ -1,0 +1,8 @@
+acc/iu				
+densenet_vs_svm_acc_and_IU_for_anchor_ice				
+images	densenet_acc_anchor	densenet_iu_anchor	svm_acc_anchor	svm_iu_anchor
+_4	0.57426	0.416	0.54969	0.36651
+_8	0.63683	0.42425	0.48722	0.3491
+_16	0.73396	0.47498	0.56131	0.40036
+_24	0.70834	0.48706	0.65469	0.42671
+_32	0.76958	0.48978	0.67832	0.43318

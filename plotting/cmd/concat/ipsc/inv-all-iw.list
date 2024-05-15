@@ -1,0 +1,9 @@
+XGB	_xgb/ext_reorg_roi_g2_16_53-iw
+SWC	_swc/ext_reorg_roi_g2_16_53-v1-base-224-1k/inference-iw
+CNC	_cnx/ext_reorg_roi_g2_16_53-large-384-22k/checkpoint-247-iw
+
+SWD	inv-swi-iw
+CND	inv-cvnxt-large-iw
+IDOL	inv-idol-inc-probs-iw
+SEQ	inv-seq-inc-iw
+VITA	inv-vita-inc-iw

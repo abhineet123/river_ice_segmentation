@@ -1,0 +1,3 @@
+SWI	swi/db3_2_to_17_except_6-large_huge/september_5_2020::id!=seq
+YOLOv5	yl/db3_2_to_11_except_6_val_2k_100/yolov5m_800_large_huge/sept5_val_best_map/conf_thres_20::id!=seq
+YOLOv8	yl8/db3_2_to_17_except_6_val_1/best_on_sept5::id!=seq

@@ -1,0 +1,8 @@
+Recall				
+Recall for Anchor and Frazil Ice and Ice+Water				
+model	anchor_ice	frazil_ice	ice+water	ice+water(fw)
+svm	0.61538	0.75411	0.78121	0.8493
+deeplab	0.74462	0.87512	0.8638	0.90871
+unet	0.73752	0.84271	0.85129	0.88688
+densenet	0.76958	0.71062	0.81421	0.85023
+segnet	0.8231	0.68992	0.8306	0.85896

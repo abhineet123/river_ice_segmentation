@@ -1,0 +1,3 @@
+SWI	swi/db3_2_to_17_except_6_with_syn-large_huge/db4_rockmaps_syn/csv/part2_on_camera_stick_cs210422100::id!=seq
+YOLOv5	yl/db3_2_to_17_except_6_with_syn_val_2k_100/yolov5m_800_large_huge/db4_rockmaps_syn/camera_stick_cs210422100::id!=seq
+YOLOv8	yl8/db3_2_to_17_except_6_with_syn_val_2k_100/best_on_db4_rockmaps_syn-cs1::id!=seq

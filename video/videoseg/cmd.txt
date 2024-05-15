@@ -1,0 +1,1 @@
+time python3 run_full.py -out /data/617/AllSegInit -in imdir_Samples.txt

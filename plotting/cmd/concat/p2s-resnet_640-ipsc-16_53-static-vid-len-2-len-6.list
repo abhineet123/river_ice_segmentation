@@ -1,0 +1,11 @@
+len-2-strd-1	p2s-resnet_640-ipsc-16_53-len-2-strd-1-54_126-batch_18-161728/nms_20
+len-2-strd-2	p2s-resnet_640-ipsc-16_53-len-2-strd-2-54_126-batch_18-161728/nms_30
+len-6-strd-1	p2s-resnet_640-ipsc-16_53-len-6-strd-1-54_126-batch_3-123442/nms_30
+len-6-strd-6	p2s-resnet_640-ipsc-16_53-len-6-strd-6-54_126-batch_3-123442/nms_30
+len-2-strd-1-aug	p2s-resnet_640-jtr-res-1280-ipsc-16_53-len-2-strd-1-54_126-809664/nms_30
+len-2-strd-2-aug	p2s-resnet_640-jtr-res-1280-ipsc-16_53-len-2-strd-2-54_126-809664/nms_30
+len-6-strd-1-aug	p2s-resnet_640-jtr-res-1280-ipsc-16_53-len-6-strd-1-54_126-530740/nms_20
+len-6-strd-6-aug	p2s-resnet_640-jtr-res-1280-ipsc-16_53-len-6-strd-6-54_126-530740/nms_20
+static-aug	p2s-resnet_640-ipsc-640-16_53-54_126-jtr-res_1280-312000/nms_30
+static-aug-acc	p2s-resnet_640-ipsc-640-16_53-54_126-jtr-res_1280-65195-acc/nms_20
+

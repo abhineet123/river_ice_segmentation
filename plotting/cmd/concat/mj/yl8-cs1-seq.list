@@ -1,0 +1,8 @@
+seq_1	yl8/db3_2_to_17_except_6_val_1/best_on_db4_rockmaps-cs1::id!=seq
+seq_2	yl8/db3_2_to_17_except_6_val_1/best_on_db4_rockmaps-cs1::id=seq_1
+seq_3	yl8/db3_2_to_17_except_6_val_1/best_on_db4_rockmaps-cs1::id=seq_2
+seq_4	yl8/db3_2_to_17_except_6_val_1/best_on_db4_rockmaps-cs1::id=seq_3
+seq_5	yl8/db3_2_to_17_except_6_val_1/best_on_db4_rockmaps-cs1::id=seq_4
+seq_6	yl8/db3_2_to_17_except_6_val_1/best_on_db4_rockmaps-cs1::id=seq_5
+
+

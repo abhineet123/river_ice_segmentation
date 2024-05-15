@@ -1,0 +1,8 @@
+seq_1	yl8/db3_2_to_17_except_6_with_syn_val_2k_100/best_on_db4_rockmaps_syn-cs1::id!=seq
+seq_2	__::id=seq_1
+seq_3	__::id=seq_2
+seq_4	__::id=seq_3
+seq_5	__::id=seq_4
+seq_6	__::id=seq_5
+
+

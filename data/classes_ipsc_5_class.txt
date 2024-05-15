@@ -1,0 +1,8 @@
+background	black
+grade_1	green
+grade_2	cyan
+grade_3	yellow
+grade_4	magenta
+grade_5	red
+
+cell	white	grade_1,grade_2,grade_3,grade_4,grade_5

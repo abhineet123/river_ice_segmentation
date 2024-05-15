@@ -1,0 +1,15 @@
+pool-0	mnist_mot-r50-test_1_10-set_zero_1_2_3
+pool-2	mnist_mot-r50-test_1_10-set_zero_1_2_3-pool_2
+pool-4	mnist_mot-r50-test_1_10-set_zero_1_2_3-pool_4
+pool-8	mnist_mot-r50-test_1_10-set_zero_1_2_3-pool_8
+pool-16	mnist_mot-r50-test_1_10-set_zero_1_2_3-pool_16
+
+
+
+
+
+
+
+
+
+

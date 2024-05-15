@@ -1,0 +1,19 @@
+SWD	#ipsc/full-swi-g2_0_15-nms_90
+CND	#ipsc/full-cvnxt-large-g2_0_15-nms_90
+IDOL	#ipsc/full-idol-inc-probs-g2_0_15-nms_10
+SEQ	#ipsc/full-seq-inc-g2_0_15-nms_90
+VITA	#ipsc/full-vita-inc-g2_0_15-nms_20
+P2S	p2s-resnet_640-g2_16_53-g2_0_15-batch_48-cls
+
+
+
+
+
+
+
+
+
+
+
+
+

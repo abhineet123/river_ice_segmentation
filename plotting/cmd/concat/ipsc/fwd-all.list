@@ -1,0 +1,22 @@
+XGB	_xgb/ext_reorg_roi_g2_0_37
+SWC	_swc/ext_reorg_roi_g2_0_37-v1-base-224-1k/inference
+CNC	_cnx/ext_reorg_roi_g2_0_37-large-384-22k/checkpoint-242
+
+SWI	fwd-swi
+CNI	fwd-cvnxt-large-nms_10
+IDOL	fwd-idol-inc-probs-nms_10
+SEQ	fwd-seq-inc-nms_10
+VITA	fwd-vita-swin-inc-nms_10
+
+
+
+
+
+
+
+
+
+
+
+
+

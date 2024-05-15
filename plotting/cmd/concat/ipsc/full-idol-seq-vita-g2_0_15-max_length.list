@@ -1,0 +1,16 @@
+idol-1	full-idol-g2_0_15-max_length-1-nms_10
+idol-2	full-idol-g2_0_15-max_length-2-nms_10
+idol-4	full-idol-g2_0_15-max_length-4-nms_10
+idol-8	full-idol-g2_0_15-max_length-8-nms_10
+idol-16	full-idol-g2_0_15-nms_10
+seq-1	full-seq-g2_0_15-max_length-1-nms_10
+seq-2	full-seq-g2_0_15-max_length-2-nms_10
+seq-4	full-seq-g2_0_15-max_length-4-nms_10
+seq-8	full-seq-g2_0_15-max_length-8-nms_20
+seq-16	full-seq-g2_0_15-nms_10
+vita-1	full-vita-g2_0_15-max_length-1-nms_10
+vita-2	full-vita-g2_0_15-max_length-2-nms_10
+vita-4	full-vita-g2_0_15-max_length-4-nms_20
+vita-8	full-vita-g2_0_15-max_length-8-nms_20
+vita-16	full-vita-g2_0_15-nms_20
+

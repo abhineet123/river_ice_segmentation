@@ -1,0 +1,21 @@
+XGB	_xgb/ext_reorg_roi_g2_54_126/on_g2_0_15-iw
+SWC	_swc/ext_reorg_roi_g2_54_126-v1-base-224-1k/on_g2_0_15/inference-iw
+CNC	_cnx/ext_reorg_roi_g2_54_126-base-384-22k/on_g2_0_15/checkpoint-1065-iw
+
+SWD	full-swi-g2_0_15-nms_90-iw
+CND	full-cvnxt-large-g2_0_15-nms_90-iw
+IDOL	full-idol-inc-probs-g2_0_15-nms_10-iw
+SEQ	full-seq-inc-g2_0_15-nms_90-iw
+VITA	full-vita-inc-g2_0_15-nms_20-iw
+
+
+
+
+
+
+
+
+
+
+
+

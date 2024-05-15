@@ -1,0 +1,21 @@
+# Mac OS Finder Poop
+.DS_Store
+
+# Ignore MATALB mex files
+*.mexglx
+*.mexmac
+*.mexmaci
+*.mexa64
+
+# Ignore Python compiled files
+*.pyc
+
+# Ignore Emacs backups
+*~
+
+# Ignore vim swap files
+.*.swp
+
+# Ignore mailfig config
+.mailfig
+

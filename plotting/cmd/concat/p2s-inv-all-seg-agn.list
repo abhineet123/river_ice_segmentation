@@ -1,0 +1,18 @@
+P2S	p2s-resnet_640-g2_16_53-g2_0_15-batch_48-12275
+SWD	#ipsc/inv-swi-agn-nms_10
+CND	#ipsc/inv-cvnxt-large-agn-nms_90
+IDOL	#ipsc/inv-idol-inc-probs-agn-nms_10
+SEQ	#ipsc/inv-seq-inc-agn-nms_10
+VITA	#ipsc/inv-vita-inc-agn-nms_10
+
+
+
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,5 @@
+build
+**/*.npy
+*.so
+*.pyc
+__init__.py
