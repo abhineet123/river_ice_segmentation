@@ -1,8 +1,8 @@
-@misc{singh2019river,
-    title={River Ice Segmentation with Deep Learning},
-    author={Abhineet Singh and Hayden Kalke and Nilanjan Ray and Mark Loewen},
-    year={2019},
-    eprint={1901.04412},
-    archivePrefix={arXiv},
-    primaryClass={cs.CV}
+@article{Singh2020_River_ice,
+  title   = {{River Ice Segmentation With Deep Learning}},
+  author  = {Abhineet Singh and Hayden Kalke and Mark Richard Loewen and Nilanjan Ray},
+  journal = {IEEE Transactions on Geoscience and Remote Sensing},
+  year    = {2020},
+  pages   = {7570-7579},
+  volume  = {58}
 }

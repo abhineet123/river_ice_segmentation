@@ -1,4 +1,4 @@
-batch_fnames = clipboard('paste')
+batch_fnames = clipboard('paste');
 batch_fnames = splitlines(batch_fnames)
 
 for batch_fname_id = 1:length(batch_fnames) 

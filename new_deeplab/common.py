@@ -19,8 +19,13 @@ Common flags from train/eval/vis/export_model.py are collected in this script.
 import collections
 import copy
 import json
+
 import tensorflow as tf
 
+if tf.__version__.startswith('2'):
+    import tensorflow.compat.v1 as tf
+
+    tf.disable_v2_behavior()
 
 flags = tf.app.flags
 
@@ -133,8 +138,9 @@ HEIGHT = 'height'
 WIDTH = 'width'
 IMAGE_NAME = 'image_name'
 LABEL = 'label'
-ORIGINAL_IMAGE = 'original_image' # resized image is called original for some unimaginably foul reason
+ORIGINAL_IMAGE = 'original_image'  # resized image is called original for some unimaginably foul reason
 ACTUAL_ORIGINAL_IMAGE = 'actual_original_image'
+
 
 # Test set name.
 # TEST_SET = 'test'
@@ -193,7 +199,6 @@ class ModelOptions(
         Returns:
           A new ModelOptions instance.
         """
-
 
         dense_prediction_cell_config = None
         if FLAGS.dense_prediction_cell_json:

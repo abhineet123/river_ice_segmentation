@@ -1,0 +1,10 @@
+0	green
+1	cyan
+2	yellow
+3	magenta
+4	red
+5	purple
+6	maroon
+7	forest_green
+8	orange
+9	blue

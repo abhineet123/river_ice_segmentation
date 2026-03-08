@@ -256,7 +256,6 @@ def print_and_write(_str, fname=None):
         open(fname, 'a').write(_str + '\n')
 
 
-
 def linux_path(*args, **kwargs):
     return os.path.join(*args, **kwargs).replace(os.sep, '/')
 
@@ -341,6 +340,9 @@ def put_text_with_background(img, text, fmt=None):
 
 
 def resize_ar(src_img, width=0, height=0, return_factors=False, bkg_col=0):
+    if len(src_img.shape) == 2:
+        src_img = np.stack((src_img,) * 3, axis=2)
+
     src_height, src_width, n_channels = src_img.shape
     src_aspect_ratio = float(src_width) / float(src_height)
 
@@ -403,6 +405,8 @@ def read_data(images_path='', images_ext='', labels_path='', labels_ext='',
             assert total_frames == len(src_labels_list), 'Mismatch between no. of labels and images'
         else:
             total_frames = len(src_labels_list)
+
+        assert total_frames > 0, 'No label frames found'
 
         src_labels_list.sort(key=sort_key)
 

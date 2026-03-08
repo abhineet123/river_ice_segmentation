@@ -3,6 +3,11 @@ function save_img(path, fname, ext, is_paper)
 	if strlength(fname) == 0
 		h=get(gca,'Title');
 		fname=get(h,'String')
+		% fname = replace(fname, ' ', '_')
+		% fname = regexprep(fname, ' +', ' ')
+        fname = regexprep(fname, '\t', '');
+        fname = regexprep(fname, '\n', '');
+		fname = replace(fname, ' ', '_')
 		% fname = clipboard('paste')
 	end
 

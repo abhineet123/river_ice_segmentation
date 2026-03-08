@@ -1,0 +1,3 @@
+background	black
+anchor_ice	green
+frazil_ice	red

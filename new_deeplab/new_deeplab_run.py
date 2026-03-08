@@ -36,8 +36,8 @@ from new_deeplab_vis_params import NewDeeplabVisParams
 import new_deeplab_train as train
 import new_deeplab_vis as raw_vis
 
-import stitchSubPatchDataset as stitch
-import visDataset as vis
+import stitch as stitch
+import vis_seg as vis
 
 
 class Phases:

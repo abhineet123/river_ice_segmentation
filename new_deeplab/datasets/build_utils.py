@@ -162,6 +162,7 @@ col_bgr = {
 def read_class_info(class_info_path):
     is_composite = 0
     class_info = []
+    class_ids = []
     composite_class_info = []
     class_lines = [k.strip() for k in open(class_info_path, 'r').readlines()]
 
@@ -186,14 +187,45 @@ def read_class_info(class_info_path):
                     raise AssertionError("invalid base_class: {} for composite_class: {}".format(
                         _base_class, _class))
                 _base_class_ids.append(_base_class_id)
-            composite_class_info.append((_class, col_bgr[_class_col], _base_class_ids))
-        else:
-            _class, _class_col = line.split('\t')
+            try:
+                col = col_bgr[_class_col][::-1]
+            except KeyError:
+                b, g, r = map(int, _class_col.split('_'))
+                col = (b, g, r)
 
-            class_info.append((_class, col_bgr[_class_col]))
+            composite_class_info.append((_class, col, tuple(_base_class_ids)))
+        else:
+            _class_info = line.split('\t')
+            _class, _class_col = _class_info[:2]
+            if len(_class_info) > 2:
+                _class_id = _class_info[2]
+                class_ids.append(int(_class_id))
+
+            if _class_col == 'black':
+                assert _class == 'background', "black should only be used for background"
+
+            if _class == 'background':
+                assert _class_col == 'black', "black should only be used for background"
+
+            try:
+                col = col_bgr[_class_col][::-1]
+            except KeyError:
+                b, g, r = map(int, _class_col.split('_'))
+                col = (b, g, r)
+
+            class_info.append((_class, col))
             classes.append(_class)
 
-    return class_info, composite_class_info
+    class_names, class_cols = zip(*class_info)
+    if 'background' not in class_names:
+        class_info.insert(0, ('background', col_bgr['black']))
+        if class_ids:
+            class_ids.insert(0, 0)
+
+    if class_ids:
+        return class_info, composite_class_info, class_ids
+    else:
+        return class_info, composite_class_info
 
 
 def undo_resize_ar(resized_img, src_width, src_height, placement_type=0):

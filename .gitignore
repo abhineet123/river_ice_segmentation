@@ -47,3 +47,10 @@ results/
 images/
 images
 archives/
+
+*.sublime-project
+*.sublime-workspace
+*.code-workspace
+
+sync.ffs_db
+*.dll

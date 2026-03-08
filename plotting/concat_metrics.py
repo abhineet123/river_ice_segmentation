@@ -1,4 +1,6 @@
+import shutil
 from datetime import datetime
+from tqdm import tqdm
 import os
 import platform
 import sys
@@ -7,26 +9,56 @@ import math
 import json
 import numpy as np
 import pandas as pd
+from zipfile import ZipFile, Path
 
+# from _paramparse_ import paramparse
 import paramparse
 
 
 class Params:
 
     def __init__(self):
-        self.no_underscores = 1
         self.list_from_cb = 1
+        # self.list_path = 'D:\Datasets\mAP\p2s_vid_detrac\p2s-mid-detrac-0_19-len-2-49_68'
+        self.list_path = ''
+
+        self.list_dir = 'cmd/concat'
+        # self.in_dir = 'cmd/concat/mj'
+        self.list_ext = ''
+        """1-based ID of files within "in_dir" in lexical order"""
+        self.list_path_id = 0
+
+        self.recursive = 0
+        self.eval_marker = 'eval_dict.json'
+        self.auc_mode = 3
+
+        self.delete_invalid = 0
+        self.ignore_invalid = 1
+        self.ignore_invalid_auc = 1
+
+        self.no_underscores = 0
 
         self.matlab_exe = ''
         self.matlab_script = ''
         # self.matlab_exe = 'X:/Program Files/MATLAB/R2022b/bin/matlab.exe'
         # self.matlab_script = 'Y:/UofA/617/Project/617_proj_code/plotting/plot_summary.m'
 
+        """
+        2025-03-25 11:27:45 PM
+        multi-ckpt consolidation for JSON metrics needs running twice – first select only the zip files and run it 
+        and then select only the folders and run it again
+        the first run is needed to complete the per-ckpt consolidation which is not performed during the live evaluation 
+        process which only supports RP-AUC
+        """
+        self.json_name = 'eval_dict.json'
+        self.json_metrics = ['FNR_DET', 'FN_DET', 'FPR_DET', 'FP_DET']
+        self.json_metric_names = []
+
         # self.cfg = 'tp_fp_rec_prec'
         # self.cfg = 'tp_fp'
         # self.cfg = 'roc_auc'
 
-        self.cfg = 'rec_prec'
+        self.cfg = ''
         # self.cfg = 'rec_prec:diff'
 
         # self.cfg = 'roc_auc_iw'
@@ -38,6 +70,7 @@ class Params:
         # self.cfg = 'rp_auc_ap'
         # self.cfg = 'fpr_fnr'
         # self.cfg = 'fpr_fnr_sub'
+        # self.cfg = 'auc_ap_fpr_fnr_sub'
         # self.cfg = 'fnr'
         # self.cfg = 'auc_ap_fpr_fnr'
         # self.cfg = 'ap_fpr_fnr'
@@ -57,20 +90,7 @@ class Params:
         self.cfg_ext = 'cfg'
         self.cfg_root = 'cfg'
 
-        self.list_dir = 'cmd/concat'
-        # self.in_dir = 'cmd/concat/mj'
-        self.list_ext = 'list'
-
-        """1-based ID of files within "in_dir" in lexical order"""
-        self.list_path_id = 21
-        self.list_path = 'inv-swi-inc-nms'
-        # self.list_path = 'inv_all'
-        # self.list_path = 'inv_all_seg'
-
-        # self.list_path = 'fwd_all_seg'
-        # self.list_path = 'fwd_all'
-
-        self.in_dirs_root = 'log/seg'
+        self.in_dirs_root = 'log/det'
 
         self.iw = 0
 
@@ -84,19 +104,20 @@ class Params:
         self.max_cols = []
 
         self.out_dir = 'log'
+        self.out_name = ''
         self.out_path = 'list_out'
 
         self.class_name = ''
 
-        self.json_name = 'eval_dict.json'
-        self.json_metrics = ['FNR_DET', 'FN_DET', 'FPR_DET', 'FP_DET']
-        self.json_metric_names = []
+
+        self.to_clipboard = 1
         """
         axis=0 --> one metric in each row / one metric for all models concatenated horizontally
         axis=1 --> one metric in each column / all metrics for each model concatenated horizontally
         """
-        self.to_clipboard = 0
-        self.axis = 0
+        self.axis = 1
+
+        self.write_model_csv = 0
 
         self.csv_metrics = [
             # 'tp_fp_cls',
@@ -114,7 +135,83 @@ class Params:
         self.sep = '\t'
 
 
+def find_csv_in_zip(csv_path, list_zip_file, list_path, csv_names, csv_id, in_dir_name,
+                    ignore_invalid, invalid_model_ids, model_id, in_dir, csv_paths):
+    csv_zip_path = Path(list_zip_file) / linux_rel_path(csv_path, list_path)
+    if not csv_zip_path.exists():
+        # print(f'\ncsv_path does not exist: {csv_path}')
+        matching_files = [k for k in list_zip_file.namelist()
+                          if os.path.basename(k) == csv_names[csv_id]
+                          and k.startswith(in_dir_name + '/')
+                          ]
+        if not matching_files:
+            if ignore_invalid:
+                print(f'no alternative matching files found for {csv_path}')
+                invalid_model_ids.append(model_id)
+                return None
+            raise AssertionError(f'no alternative matching files found in {in_dir}')
+        if len(matching_files) > 1:
+            raise AssertionError('multiple alternative matching files found')
+        # print(f'found alternative: {matching_files[0]}\n')
+        csv_path = csv_paths[csv_id] = linux_path(list_path, matching_files[0])
+
+    csv_rel_path = linux_rel_path(csv_path, list_path)
+    csv_fid = list_zip_file.open(csv_rel_path)
+
+    return csv_fid
+
+
+def find_longest_match(str_list):
+    from difflib import SequenceMatcher
+
+    n_strs = len(str_list)
+
+    assert n_strs > 1, "there must be at least two strings to find the longest match"
+
+    common_str = None
+
+    for str1_id, str1 in enumerate(str_list):
+
+        if common_str is None:
+            common_str = str1
+
+        if str1_id >= n_strs - 1:
+            break
+
+        str2 = str_list[str1_id + 1]
+
+        match = SequenceMatcher(None, common_str, str2).find_longest_match()
+
+        common_str = str2[match.b:match.b + match.size]
+
+    return common_str
+
+
+def reorder_lists(lists, idxs):
+    new_lists = [[somelist[j] for j in idxs] for somelist in lists]
+    return new_lists
+
+
+def remove_from_lists(lists, idxs):
+    new_lists = [[i for j, i in enumerate(somelist) if j not in idxs] for somelist in lists]
+    return new_lists
+
+
+def linux_rel_path(*args, **kwargs):
+    return os.path.relpath(*args, **kwargs).replace(os.sep, '/')
+
+
+def to_str(k):
+    return '\n'.join(k)
+
+
 def linux_path(*args, **kwargs):
+    """
+
+    :param args:
+    :param kwargs:
+    :rtype: str
+    """
     return os.path.join(*args, **kwargs).replace(os.sep, '/')
 
 
@@ -127,31 +224,6 @@ def remove_repeated_substr(in_str, sep='_', other_seps=(':', '-')):
     return out_str
 
 
-def main():
-    params = Params()
-    paramparse.process(params)
-
-    if params.list_from_cb > 0:
-        try:
-            from Tkinter import Tk
-        except ImportError:
-            from tkinter import Tk
-        list_paths = Tk().clipboard_get()
-        list_paths = list_paths.splitlines()
-
-        list_paths = [linux_path(list_path) for list_path in list_paths]
-        # py_path = sys.executable
-        # file_path = __file__
-        py_platform = platform.uname().release
-        if py_platform.endswith("microsoft-standard-WSL2"):
-            list_paths = [os.popen(f'wslpath "{list_path}"').read().strip() for list_path in list_paths]
-
-        for list_path in list_paths:
-            run(params, list_path)
-    else:
-        run(params)
-
-
 def run(params, list_path=None):
     """
 
@@ -159,10 +231,14 @@ def run(params, list_path=None):
     :param list_path:
     :return:
     """
+    csv_metrics = params.csv_metrics
+
     in_dirs = []
 
     time_stamp = datetime.now().strftime("%y%m%d_%H%M%S")
     out_name = time_stamp
+    list_zip_file = None
+    out_dir = None
 
     if list_path is None:
         if params.list_from_cb > 0:
@@ -181,36 +257,71 @@ def run(params, list_path=None):
             # print()
 
         elif params.list_path_id > 0:
-            list_files = glob.glob(os.path.join(params.list_dir, f'**/*.{params.list_ext}'), recursive=True)
+            list_files = glob.glob(linux_path(params.list_dir, f'**/*.{params.list_ext}'), recursive=True)
             list_files = sorted(list_files)
             list_path = list_files[params.list_path_id - 1]
         else:
-            list_path = linux_path(params.list_dir, params.list_path)
+            list_path = params.list_path
+            if params.list_dir:
+                list_path = linux_path(params.list_dir, list_path)
             if params.list_ext:
                 list_path = f'{list_path}.{params.list_ext}'
 
     if not in_dirs or not all(os.path.isdir(in_dir)
                               # and os.path.isfile(linux_path(in_dir, params.json_name))
                               for in_dir in in_dirs):
+        if list_path.endswith('.zip'):
+            list_zip_file = ZipFile(list_path, 'r')
+            out_dir = list_path = list_path.replace('.zip', '')
 
-        if os.path.isfile(list_path):
+            if params.recursive:
+                eval_files = [k for k in list_zip_file.namelist()
+                              if os.path.basename(k) == params.eval_marker]
+                subdirs = [os.path.dirname(k) for k in eval_files]
+            else:
+                subdirs = [k.name for k in Path(list_zip_file).iterdir() if k.is_dir()]
+            in_dirs = [f'{subdir}\t{linux_path(list_path, subdir)}' for subdir in subdirs]
+        elif os.path.isfile(list_path):
             print(f'reading in_dirs from {list_path}')
             in_dirs = open(list_path, 'r').read().splitlines()
             in_dirs = [k.strip() for k in in_dirs if k.strip() and not k.startswith('#')]
         elif os.path.isdir(list_path):
             print(f'setting in_dirs as subdirs of {list_path}')
-            subdirs = [k for k in os.listdir(list_path) if os.path.isdir(linux_path(list_path, k))]
+            if params.recursive:
+                eval_files = glob.glob(linux_path(list_path, f'**/{params.eval_marker}'), recursive=True)
+                subdirs = [os.path.dirname(os.path.relpath(k, list_path)) for k in eval_files]
+            else:
+                subdirs = [k for k in os.listdir(list_path) if os.path.isdir(linux_path(list_path, k))]
             in_dirs = [f'{subdir}\t{linux_path(list_path, subdir)}' for subdir in subdirs]
         else:
             raise AssertionError(f'Nonexistent list_path: {list_path}')
 
+        assert in_dirs, "empty in_dirs"
+
         in_name = os.path.splitext(os.path.basename(list_path))[0]
         if params.cfg and params.cfg not in in_name:
             in_name = f'{in_name}_{params.cfg}'
+            in_name = in_name.replace(':', '_')
 
         out_name = f'{out_name}_{in_name}'
     else:
         in_name = ''
+
+    if not params.csv_mode:
+        out_name = f'{out_name}_json'
+
+    if params.iw:
+        out_name = f'{out_name}-iw'
+
+    # out_name = remove_repeated_substr(out_name)
+    # in_name = remove_repeated_substr(in_name)
+
+    if out_dir is None:
+        out_dir = linux_path(params.out_dir, out_name if not params.out_name else params.out_name)
+
+    os.makedirs(out_dir, exist_ok=True)
+
+    print(f'out_dir: {out_dir}')
 
     filter_info_list = []
     models = []
@@ -220,7 +331,7 @@ def run(params, list_path=None):
         filter_info = model = None
         if '\t' in in_dir:
             model, in_dir = in_dir.split('\t')
-            model = model.strip()
+            model = model.strip().replace('/', '-')
             in_dir = in_dir.strip()
         if '::' in in_dir:
             in_dir, filter_info = in_dir.split('::')
@@ -260,14 +371,35 @@ def run(params, list_path=None):
         model: {} for model in models
     }
     if not params.csv_mode:
+        params.json_metrics = [json_metric.replace('__eq__', '=') for json_metric in params.json_metrics]
         if params.json_metric_names:
             assert len(params.json_metric_names) == len(params.json_metrics), \
                 "mismatch between json_metric_names and json_metrics"
+            params.json_metric_names = [json_metric_name.replace('__eq__', '=')
+                                        for json_metric_name in params.json_metric_names]
         else:
             params.json_metric_names = params.json_metrics[:]
 
-    for in_dir, model, filter_info in zip(in_dirs, models, filter_info_list):
-        assert os.path.exists(in_dir), f"in_dir does not exist: {in_dir}"
+    invalid_model_ids = []
+    for model_id, (in_dir, model, filter_info) in enumerate(zip(in_dirs, models, filter_info_list)):
+
+        in_dir_parent_zip_file = None
+
+        if list_zip_file is not None:
+            in_dir_name = linux_rel_path(in_dir, list_path)
+            in_dir_path = Path(list_zip_file) / in_dir_name
+            assert in_dir_path.is_dir(), f"in_dir does not exist in zip: {in_dir}"
+        else:
+            if not os.path.exists(in_dir):
+                in_dir_parent = os.path.dirname(in_dir)
+                in_dir_parent_zip = f'{in_dir_parent}.zip'
+                if os.path.isfile(in_dir_parent_zip):
+                    in_dir_parent_zip_file = ZipFile(in_dir_parent_zip, 'r')
+                    in_dir_name = os.path.basename(in_dir)
+                    in_dir_path = Path(in_dir_parent_zip_file) / in_dir_name
+                    assert in_dir_path.is_dir(), f"in_dir does not exist in zip: {in_dir}"
+                else:
+                    raise AssertionError(f'nonexistent in_dir: {in_dir}')
 
         exclude_mode = 0
 
@@ -281,7 +413,7 @@ def run(params, list_path=None):
                 raise AssertionError(f'invalid filter_info: {filter_info}')
 
         if params.csv_mode:
-            csv_names = [f'{metric}.csv' if params.csv_mode == 1 else f'{metric}.txt' for metric in params.csv_metrics]
+            csv_names = [f'{metric}.csv' if params.csv_mode == 1 else f'{metric}.txt' for metric in csv_metrics]
             if params.class_name:
                 csv_names = [f'{params.class_name}-{csv_name}' for csv_name in csv_names]
 
@@ -292,19 +424,37 @@ def run(params, list_path=None):
             metric_dfs = []
             max_rows = []
 
-            for csv_id, csv_path in enumerate(csv_paths):
+            for csv_id, (csv_path, metric) in enumerate(zip(csv_paths, csv_metrics, strict=True)):
                 """look for recursive alternatives if needed"""
-                if not os.path.exists(csv_path):
-                    print(f'\ncsv_path does not exist: {csv_path}')
-                    matching_files = glob.glob(os.path.join(in_dir, f'**/{csv_names[csv_id]}'), recursive=True)
-                    if not matching_files:
-                        raise AssertionError('no alternative matching files found')
-                    if len(matching_files) > 1:
-                        raise AssertionError('multiple alternative matching files found')
-                    print(f'found alternative: {matching_files[0]}\n')
-                    csv_path = csv_paths[csv_id] = matching_files[0]
+                if list_zip_file is not None:
+                    csv_fid = find_csv_in_zip(csv_path, list_zip_file, list_path, csv_names, csv_id,
+                                              in_dir_name, params.ignore_invalid, invalid_model_ids, model_id, in_dir,
+                                              csv_paths)
 
-                metric_df = pd.read_csv(csv_path, sep='\t')
+                elif in_dir_parent_zip_file is not None:
+                    csv_fid = find_csv_in_zip(csv_path, in_dir_parent_zip_file, in_dir_parent, csv_names, csv_id,
+                                              in_dir_name, params.ignore_invalid, invalid_model_ids, model_id, in_dir,
+                                              csv_paths)
+                else:
+                    if not os.path.exists(csv_path):
+                        # print(f'\ncsv_path does not exist: {csv_path}')
+                        matching_files = glob.glob(linux_path(in_dir, f'**/{csv_names[csv_id]}'), recursive=True)
+                        if not matching_files:
+                            if params.delete_invalid:
+                                print(f'no alternative matching files found for {csv_path}')
+                                shutil.rmtree(in_dir)
+                                invalid_model_ids.append(model_id)
+                                continue
+                            else:
+                                raise AssertionError(f'no alternative matching files found for {csv_path} in {in_dir}')
+                        if len(matching_files) > 1:
+                            raise AssertionError(f'multiple alternative matching files found for {csv_path}')
+                        # print(f'found alternative: {matching_files[0]}\n')
+                        csv_path = csv_paths[csv_id] = matching_files[0]
+                    csv_fid = open(csv_path, 'r')
+
+                metric_df = pd.read_csv(csv_fid, sep='\t')
+                csv_fid.close()
 
                 if filter_col is not None:
                     if exclude_mode:
@@ -331,20 +481,91 @@ def run(params, list_path=None):
 
                     max_rows.append(max_row)
 
-                metric_dfs.append(metric_df)
+                auc_mode = params.auc_mode
+                if auc_mode and metric == 'rec_prec':
+                    metric_np = metric_df.to_numpy()
 
-            # metric_dfs = [pd.read_csv(csv_path, sep='\t') for csv_path in csv_paths]
+                    X = metric_np[:, 1].reshape((-1, 1))
+                    Y = metric_np[:, 2].reshape((-1, 1))
+                    valid = np.isfinite(Y)
+                    X = X[valid]
+                    Y = Y[valid]
+                    X_auc = np.copy(X)
+                    Y_auc = np.copy(Y)
+                    # find the row where recall becomes maximum and copy this row into any rows
+                    # before it while making the precision 0 and leaving the recall be
+                    max_x, max_x_ind = np.amax(X_auc), np.argmax(X_auc)
+                    for i__ in range(max_x_ind):
+                        X_auc[i__] = max_x
+                        Y_auc[i__] = 0
+                    max_y, max_y_ind = np.amax(Y_auc), np.argmax(Y_auc)
+                    n_data = len(Y_auc)
+                    for i__ in range(max_y_ind + 1, n_data):
+                        Y_auc[i__] = max_y
+                        X_auc[i__] = 0
+
+                    X_auc = np.concatenate(([max_x], X_auc, [0]), axis=0)
+                    Y_auc = np.concatenate(([0], Y_auc, [max_y]), axis=0)
+
+                    # XY_auc = np.concatenate((X_auc.reshape((-1, 1)), Y_auc.reshape((-1, 1))), axis=1)
+                    # XY = np.concatenate((X.reshape((-1, 1)), Y.reshape((-1, 1))), axis=1)
+                    # auc_raw = np.trapz(Y, X)
+
+                    # from matplotlib import pyplot as plt
+                    # plt.figure()
+                    # plt.plot(X, Y, color='green',
+                    #          # marker='o',
+                    #          linestyle='solid',
+                    #          linewidth=2,
+                    #          # markersize=12
+                    #          )
+                    # plt.plot(X_auc, Y_auc, color='red',
+                    #          # marker='o',
+                    #          linestyle='dashed',
+                    #          linewidth=2,
+                    #          # markersize=12
+                    #          )
+                    # ax = plt.gca()
+                    # ax.set_xlim([0, 100])
+                    # ax.set_ylim([0, 100])
+                    # plt.title(f'{model} {metric}')
+                    # plt.show()
+
+                    auc = np.trapz(Y_auc, X_auc)
+                    if auc < 0:
+                        auc = -auc
+                    norm_auc = auc / 100
+
+                    # print(f'{model} {metric} norm_auc: {norm_auc}')
+
+                    # print()
+                    out_auc_path = linux_path(out_dir, f'{metric}.csv.auc{auc_mode}')
+                    with open(out_auc_path, 'a') as auc_fid:
+                        auc_fid.write(f'{model}\t{norm_auc:.2f}\n')
+
+                metric_dfs.append(metric_df)
 
             metrics_dict[model] = metric_dfs
             if params.max_by:
                 max_rows_dict[model] = max_rows
         else:
             """json mode"""
-            json_path = os.path.join(in_dir, params.json_name)
-            with open(json_path, 'r') as fid:
-                json_data = json.load(fid)
+            if list_zip_file is not None:
+                json_path = linux_path(os.path.relpath(in_dir, list_path), params.json_name)
+                fid = list_zip_file.open(json_path)
+            elif in_dir_parent_zip_file is not None:
+                json_path = linux_path(in_dir_name, params.json_name)
+                fid = in_dir_parent_zip_file.open(json_path)
+            else:
+                json_path = linux_path(in_dir, params.json_name)
+                fid = open(json_path, 'r')
+            json_data = json.load(fid)
+            fid.close()
 
             if params.class_name:
+                if params.class_name not in json_data and 'agnostic' in json_data:
+                    print(f'using class agnostic mode instead of nonexistent class {params.class_name}')
+                    params.class_name = 'agnostic'
                 json_data = json_data[params.class_name]
 
             for metric_name, metric in zip(params.json_metric_names, params.json_metrics):
@@ -352,32 +573,30 @@ def run(params, list_path=None):
 
                 metrics_dict[model][metric_name] = metric_val
 
-    if not params.csv_mode:
-        out_name = f'{out_name}_json'
+        if in_dir_parent_zip_file is not None:
+            in_dir_parent_zip_file.close()
 
-    if params.iw:
-        out_name = f'{out_name}-iw'
+    sort_idxs = sorted(range(len(models)), key=models.__getitem__)
+    if invalid_model_ids:
+        sort_idxs = [k for k in sort_idxs if k not in invalid_model_ids]
+    # in_dirs, models, filter_info_list = remove_from_lists((in_dirs, models, filter_info_list), invalid_model_ids)
+    in_dirs, models, filter_info_list = reorder_lists((in_dirs, models, filter_info_list), sort_idxs)
 
-    # out_name = remove_repeated_substr(out_name)
-    # in_name = remove_repeated_substr(in_name)
-
-    out_dir = linux_path(params.out_dir, out_name)
-    os.makedirs(out_dir, exist_ok=True)
-
-    print(f'out_dir: {out_dir}')
+    if list_zip_file is not None:
+        list_zip_file.close()
 
     concat_path = linux_path(out_dir, f'concat.txt')
     concat_txt = '\n'.join(concat_list)
     open(concat_path, 'w').write(concat_txt)
 
-    if not params.iw:
-        import pyperclip
-        abs_out_dir = os.path.abspath(out_dir)
-        pyperclip.copy(abs_out_dir)
+    # if not params.iw and params.list_from_cb:
+    # import pyperclip
+    # abs_out_dir = os.path.abspath(out_dir)
+    # pyperclip.copy(abs_out_dir)
 
     if params.csv_mode:
         if params.iw:
-            for metric_id, metric in enumerate(params.csv_metrics):
+            for metric_id, metric in enumerate(csv_metrics):
                 cmb_dfs = []
                 for model in models:
                     metric_df = metrics_dict[model][metric_id]
@@ -495,10 +714,14 @@ def run(params, list_path=None):
         else:
             # axis_0_txt = ''
 
+            assert metrics_dict, "empty metrics_dict"
+
             all_out_lines = []
-            for metric_id, metric in enumerate(params.csv_metrics):
+            for metric_id, metric in enumerate(csv_metrics):
                 # axis_0_txt += f'\n{metric}\n'
                 all_models_dfs = [metrics_dict[model][metric_id] for model in models]
+                assert all_models_dfs, "empty all_models_dfs"
+
                 n_rows, n_cols = zip(*[all_models_df.shape for all_models_df in all_models_dfs])
                 header_list = [model + '\t' * (n_col - 1) for n_col, model in zip(n_cols, models)]
                 header2 = '\t'.join(header_list)
@@ -574,7 +797,7 @@ def run(params, list_path=None):
             for model in models:
                 all_metrics_dfs = metrics_dict[model]
                 n_cols = [all_metrics_df.shape[1] for all_metrics_df in all_metrics_dfs]
-                header_list = [metric + '\t' * (n_col - 1) for n_col, metric in zip(n_cols, params.csv_metrics)]
+                header_list = [metric + '\t' * (n_col - 1) for n_col, metric in zip(n_cols, csv_metrics)]
                 header2 = '\t'.join(header_list)
 
                 all_metrics_dfs_cc = pd.concat(all_metrics_dfs, axis=1)
@@ -585,7 +808,11 @@ def run(params, list_path=None):
 
                 out_txt = header1 + '\n' + header2 + '\n' + df_txt + f'\n'
 
-                open(linux_path(out_dir, f'{model}.csv'), 'w', newline='').write(out_txt)
+                if params.write_model_csv:
+                    out_csv_path = linux_path(out_dir, f'{model}.csv')
+                    out_csv_dir = os.path.dirname(out_csv_path)
+                    os.makedirs(out_csv_dir, exist_ok=True)
+                    open(out_csv_path, 'w', newline='').write(out_txt)
 
                 out_lines = out_txt.splitlines()
                 all_out_lines.append(out_lines)
@@ -610,8 +837,13 @@ def run(params, list_path=None):
             out_csv_name = f'{params.cfg}.csv'
             out_csv_name_t = f'{params.cfg}_t.csv'
         else:
-            out_csv_name = 'metrics_df.csv'
-            out_csv_name_t = 'metrics_df_t.csv'
+            if len(params.json_metric_names) == 1:
+                json_metric_name = params.json_metric_names[0]
+                out_csv_name = f'{json_metric_name}.csv'
+                out_csv_name_t = f'{json_metric_name}_t.csv'
+            else:
+                out_csv_name = 'metrics_df.csv'
+                out_csv_name_t = 'metrics_df_t.csv'
 
         with open(linux_path(out_dir, out_csv_name), 'w', newline='') as fid:
             title = ''
@@ -627,12 +859,16 @@ def run(params, list_path=None):
                 fid.write(title + '\n')
 
             fid.write(metrics_header + '\n')
+            # extra empty line for convenient columnwise data sorting in Excel
+            fid.write('\n')
             metrics_df.to_csv(fid, sep='\t', index_label='metric')
 
         with open(linux_path(out_dir, out_csv_name_t), 'w', newline='') as fid:
             fid.write(metrics_header + '\n')
             if in_name:
                 fid.write(in_name + '\n')
+            # extra empty line for convenient columnwise data sorting in Excel
+            fid.write('\n')
             metrics_df_t.to_csv(fid, sep='\t', index_label='model')
 
     if params.matlab_exe and params.matlab_script:
@@ -652,17 +888,201 @@ def run(params, list_path=None):
         matlab_exe = f'"{matlab_exe}"'
         matlab_script = f"'{matlab_script}'"
 
-        import pyperclip
+        # import pyperclip
 
-        abs_out_dir_win = linux_path(abs_out_dir_win)
-
-        print(f'abs_out_dir_win: {abs_out_dir_win}')
-        pyperclip.copy(abs_out_dir_win)
+        # abs_out_dir_win = linux_path(abs_out_dir_win)
+        # print(f'abs_out_dir_win: {abs_out_dir_win}')
+        # pyperclip.copy(abs_out_dir_win)
 
         matlab_cmd = f'{matlab_exe} -nosplash -nodesktop -r "run({matlab_script}); exit;"'
         print(matlab_cmd)
         os.system(matlab_cmd)
 
 
+def main(params: Params = None):
+    if params is None:
+        params: Params = paramparse.process(Params)
+
+    if not params.list_from_cb:
+        run(params)
+        return
+
+    try:
+        from Tkinter import Tk
+    except ImportError:
+        from tkinter import Tk
+    list_paths = Tk().clipboard_get()
+    list_paths = list_paths.splitlines()
+
+    list_paths = [linux_path(list_path.strip()) for list_path in list_paths if "#concat" not in list_path]
+    # py_path = sys.executable
+    # file_path = __file__
+    py_platform = platform.uname().release
+    if py_platform.endswith("microsoft-standard-WSL2"):
+        list_paths = [os.popen(f'wslpath "{list_path}"').read().strip() for list_path in list_paths]
+
+    max_auc_mode = 0
+    if params.csv_metrics:
+
+        metric_name = f'{params.csv_metrics[0]}'
+        auc_name = f'{params.csv_metrics[0]}.csv.auc3'
+    else:
+        metric_name = f'{params.json_metrics[0]}'
+        auc_name = f'{params.json_metrics[0]}_t.csv'
+
+    auc_paths = [linux_path(list_path, auc_name)
+                 for list_path in list_paths if os.path.isdir(list_path)
+                 and not list_path.endswith('_concat')
+                 and not os.path.basename(list_path) == "#concat"]
+
+    valid_auc_ids = [i for i, auc_path in enumerate(auc_paths) if os.path.isfile(auc_path)]
+    invalid_auc_files = [auc_path for auc_path in auc_paths if not os.path.isfile(auc_path)]
+
+    if valid_auc_ids:
+        if invalid_auc_files:
+            print(f'some auc_files are invalid:\n{to_str(invalid_auc_files)}')
+            if not params.ignore_invalid_auc:
+                raise AssertionError
+        max_auc_mode = 1
+        auc_paths = [auc_paths[i] for i in valid_auc_ids]
+        list_paths = [list_paths[i] for i in valid_auc_ids]
+
+    max_auc_dfs = []
+    csv_headers = []
+    out_concat_lines = []
+    out_concat_names = []
+    out_concat_paths = []
+    list_name_to_max_auc = {}
+    for list_path_id, list_path in tqdm(enumerate(list_paths), total=len(list_paths)):
+
+        if not max_auc_mode:
+            run(params, list_path)
+            continue
+
+        auc_path = auc_paths[list_path_id]
+        auc_lines = open(auc_path, 'r').readlines()
+        if not params.csv_metrics:
+            auc_lines = auc_lines[4:]
+
+        auc_names, auc_vals = list(zip(*[auc_line.split('\t') for auc_line in auc_lines]))
+        auc_vals = list(map(float, auc_vals))
+
+        concat_txt_path = linux_path(list_path, 'concat.txt')
+        concat_lines = open(concat_txt_path, 'r').readlines()
+        concat_names, concat_paths = list(zip(*[concat_line.strip().split('\t') for concat_line in concat_lines]))
+        n_concat_lines = len(concat_lines)
+        n_auc_lines = len(auc_lines)
+        if len(concat_lines) != len(auc_lines):
+            missing_auc_names = list(set(concat_names) - set(auc_names))
+            print(f"\n\nauc_lines len mismatch in {list_path}: {n_concat_lines}, {n_auc_lines}")
+            print(f"missing_auc_names: {missing_auc_names}\n\n")
+            # continue
+
+        concat_names_to_paths = dict(zip(concat_names, concat_paths))
+
+        max_auc_idx = np.argmax(auc_vals)
+        max_auc_name = auc_names[max_auc_idx]
+        max_auc_val = auc_vals[max_auc_idx]
+
+        list_name = os.path.basename(list_path)
+        list_name_to_max_auc[list_name] = max_auc_val
+
+        max_auc_concat_path = concat_names_to_paths[max_auc_name]
+        max_auc_concat_dir = os.path.dirname(max_auc_concat_path)
+        max_auc_concat_name = os.path.basename(max_auc_concat_dir)
+
+        out_concat_paths.append(max_auc_concat_path)
+        out_concat_names.append(max_auc_concat_name)
+
+        max_auc_name = auc_names[max_auc_idx]
+
+        max_auc_csv_zip = list_path + '.zip'
+        if os.path.isfile(max_auc_csv_zip):
+            max_auc_csv_path = linux_path(list_path, f'{max_auc_name}', 'misc', 'rec_prec.csv')
+            max_auc_csv_rel_path = linux_rel_path(max_auc_csv_path, list_path)
+            with ZipFile(max_auc_csv_zip, 'r') as fid:
+                csv_lines = fid.open(max_auc_csv_rel_path).readlines()
+                csv_lines = [csv_line.decode("utf-8") for csv_line in csv_lines]
+        else:
+            max_auc_csv_path = linux_path(list_path, f'{max_auc_name}.csv')
+            if os.path.isfile(max_auc_csv_path):
+                csv_lines = open(max_auc_csv_path, 'r').readlines()
+            else:
+                max_auc_name = max_auc_name.replace('-', '_')
+                max_auc_csv_path = linux_path(list_path, f'{max_auc_name}.csv')
+                assert os.path.isfile(max_auc_csv_path), f"nonexistent max_auc_csv_path: {max_auc_csv_path}"
+
+            csv_lines = open(max_auc_csv_path, 'r').readlines()
+            csv_lines = csv_lines[2:]
+
+        csv_str = ''.join(csv_lines)
+        from io import StringIO
+        csv_io = StringIO(csv_str)
+        max_auc_df = pd.read_csv(csv_io, sep='\t')
+        n_cols = max_auc_df.shape[1]
+        csv_header = f'{max_auc_concat_name}' + '\t' * (n_cols - 1)
+        csv_header = csv_header.replace('_', '-')
+        # csv_headers.append(csv_header)
+
+        max_auc_dfs.append(max_auc_df)
+
+    if not max_auc_mode:
+        return
+
+    # common_concat_name = find_longest_match(out_concat_names)
+
+    for max_auc_concat_name, max_auc_concat_path in zip(out_concat_names, out_concat_paths, strict=True):
+        # if common_concat_name:
+        #     max_auc_concat_name = max_auc_concat_name.replace(common_concat_name, '')
+
+        csv_headers.append(max_auc_concat_name.replace('_', '-'))
+
+        out_concat_line = f'{max_auc_concat_name}\t{max_auc_concat_path}'
+        out_concat_lines.append(out_concat_line)
+
+    cmb_df = pd.concat(max_auc_dfs, axis=1)
+    cmb_df_str = cmb_df.to_csv(sep='\t', index=False, lineterminator='\n')
+
+    cmb_header = '\t'.join(csv_headers)
+
+    time_stamp = datetime.now().strftime("%y%m%d_%H%M%S")
+
+    in_parent_dir = os.path.dirname(list_paths[0])
+    out_name = f'{time_stamp}'
+    out_dir = linux_path(in_parent_dir, '#concat', f'{out_name}')
+    os.makedirs(out_dir, exist_ok=True)
+    out_path = linux_path(out_dir, f'{metric_name}.csv')
+    out_max_auc_path = linux_path(out_dir, f'{metric_name}.csv.auc3')
+    out_concat_path = linux_path(out_dir, f'concat.txt')
+
+    with open(out_max_auc_path, 'w') as fid:
+        out_max_auc_str = ''
+        for list_name, max_auc in list_name_to_max_auc.items():
+            list_name = list_name.replace('ckpt-', '')
+            out_max_auc_str_ = f'{list_name}\t{max_auc}\n'
+            out_max_auc_str += out_max_auc_str_
+            fid.write(out_max_auc_str_)
+        import pyperclip
+        pyperclip.copy(out_max_auc_str)
+
+    # if common_concat_name:
+    #     out_name = f'{out_name}_{common_concat_name}'
+
+    out_txt = f'{out_name}' + '\n' + cmb_header + '\n' + cmb_df_str + f'\n'
+
+    print(f'out_path: {out_path}')
+    print(f'out_concat_path: {out_concat_path}')
+
+    out_concat_str = '\n'.join(out_concat_lines)
+
+    open(out_concat_path, 'w', newline='\n').write(out_concat_str)
+    open(out_path, 'w', newline='\n').write(out_txt)
+
+    # print()
+
+
 if __name__ == '__main__':
+    # while True:
     main()
+    # print('press any key to continue')
+    # print()

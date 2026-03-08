@@ -8,14 +8,21 @@ os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 import random
 import cv2
 import numpy as np
+
 import tensorflow as tf
+
+if tf.__version__.startswith('2'):
+    import tensorflow.compat.v1 as tf
+
+    tf.disable_v2_behavior()
+
 from tqdm import tqdm
 
 import paramparse
 
 from build_data import ImageReader, image_seg_to_tfexample
 from build_utils import resize_ar, read_class_info, remove_fuzziness_in_mask, col_bgr
-from ipsc_info import IPSCInfo, IPSCPatchesInfo
+from db_info import IPSCInfo, IPSCPatchesInfo, IPSCDevInfo
 
 
 class Params:
@@ -23,6 +30,7 @@ class Params:
     def __init__(self):
         self.db_split = 'all'
 
+        self.dev = 1
         self.patches = 0
 
         self.cfg = ()
@@ -33,10 +41,13 @@ class Params:
         self.resize = 0
         self.root_dir = '/data/ipsc'
         self.output_root_dir = '/data/tfrecord'
-        self.output_dir = 'ipsc'
+        self.output_dir = ''
 
         self.start_id = 0
         self.end_id = -1
+
+        self.start_frame_id = -1
+        self.end_frame_id = -1
 
         self.write_gt = 0
         self.write_img = 1
@@ -45,13 +56,13 @@ class Params:
 
         self.preprocess = 0
         self.n_classes = 2
-        self.class_info_path = '../data/classes_ipsc_5_class.txt'
+        self.class_info_path = '../data/classes_ipsc_2_class.txt'
 
         """uncertainty in mask pixel values for each class"""
         self.fuzziness = 5
 
         self.shuffle = 1
-        self.train_ratio = 0.7
+        self.train_ratio = 0
 
         self.show_img = 0
         self.save_img = 0
@@ -128,14 +139,21 @@ def _convert_dataset(params):
     seq_ids = params.db_splits[params.db_split]
 
     output_dir = params.output_dir
-
     if params.n_classes > 2:
         print('using {} class version'.format(params.n_classes - 1))
-        output_dir += '_{}_class'.format(params.n_classes - 1)
 
     if params.patches:
         print('using patch version')
-        output_dir += '_patches'
+
+    if not output_dir:
+        output_dir = 'ipsc'
+        if params.n_classes > 2:
+            print('using {} class version'.format(params.n_classes - 1))
+            output_dir += '_{}_class'.format(params.n_classes - 1)
+
+        if params.patches:
+            print('using patch version')
+            output_dir += '_patches'
 
     print('root_dir: {}'.format(params.root_dir))
     print('db_split: {}'.format(params.db_split))
@@ -195,11 +213,18 @@ def _convert_dataset(params):
         if params.patches:
             seq_name, n_frames = IPSCPatchesInfo.sequences[seq_id]
         else:
-            seq_name, n_frames = IPSCInfo.sequences[seq_id]
+            if params.dev:
+                seq_name, n_frames = IPSCDevInfo.sequences[seq_id]
+            else:
+                seq_name, n_frames = IPSCInfo.sequences[seq_id]
 
         print('\tseq {} / {}\t{}\t{}\t{} frames'.format(__id + 1, n_seq, seq_id, seq_name, n_frames))
 
-        img_dir_path = linux_path(params.root_dir, 'images', seq_name)
+        if params.dev:
+            img_dir_path = linux_path(params.root_dir, 'images', seq_name)
+        else:
+            img_dir_path = linux_path(params.root_dir, seq_name)
+
         print('reading images from: {}'.format(img_dir_path))
 
         _img_src_files = [linux_path(img_dir_path, k) for k in os.listdir(img_dir_path) if
@@ -210,13 +235,26 @@ def _convert_dataset(params):
             "Mismatch between number of the specified frames and number of actual images in folder"
 
         _img_src_files.sort()
-        rand_indices = None
-        if params.shuffle:
-            rand_indices = list(range(n_img_files))
-            random.shuffle(rand_indices)
-            _img_src_files = [_img_src_files[i] for i in rand_indices]
 
-        _n_train_files = int(n_img_files * params.train_ratio)
+        img_indices = list(range(n_img_files))
+
+        if params.start_frame_id >= 0 or params.end_frame_id >= 0:
+            if params.start_frame_id < 0:
+                params.start_frame_id = 0
+            if params.end_frame_id < 0:
+                params.end_frame_id = n_frames - 1
+            img_indices = img_indices[params.start_frame_id:params.end_frame_id + 1]
+
+        if params.shuffle:
+            random.shuffle(img_indices)
+
+        _img_src_files = [_img_src_files[i] for i in img_indices]
+        n_img_files = len(_img_src_files)
+
+        if params.train_ratio:
+            _n_train_files = int(n_img_files * params.train_ratio)
+        else:
+            _n_train_files = n_img_files
 
         train_img_files += _img_src_files[:_n_train_files]
         test_img_files += _img_src_files[_n_train_files:]
@@ -225,16 +263,23 @@ def _convert_dataset(params):
         n_test_files += n_img_files - _n_train_files
 
         if not params.disable_seg:
-            vis_seg_path = linux_path(params.root_dir, 'vis_labels', seq_name)
-            os.makedirs(vis_seg_path, exist_ok=1)
-
-            raw_seg_path = linux_path(params.root_dir, 'raw_labels', seq_name)
-
-            if params.preprocess:
+            if params.dev:
+                vis_seg_path = linux_path(params.root_dir, 'vis_labels', seq_name)
+                raw_seg_path = linux_path(params.root_dir, 'raw_labels', seq_name)
                 seg_path = linux_path(params.root_dir, 'labels', seq_name)
-                print('reading segmentations from: {}'.format(seg_path))
-                assert os.path.exists(seg_path), \
-                    "segmentations not found for sequence: {}".format(seq_name)
+
+            else:
+                vis_seg_path = linux_path(params.root_dir, seq_name, 'vis_masks')
+                raw_seg_path = linux_path(params.root_dir, seq_name, 'raw_masks')
+                seg_path = linux_path(params.root_dir, seq_name, 'masks')
+
+            os.makedirs(vis_seg_path, exist_ok=True)
+
+            if not params.preprocess:
+                raw_seg_path = seg_path
+            else:
+                assert os.path.exists(seg_path), f"invalid seg_path: {seg_path}"
+                print(f'reading segmentations from: {seg_path}')
 
                 _seg_src_fnames = [k for k in os.listdir(seg_path) if
                                    os.path.splitext(k.lower())[1] in seg_exts]
@@ -242,7 +287,7 @@ def _convert_dataset(params):
 
                 print('writing raw segmentation images to {}'.format(raw_seg_path))
 
-                os.makedirs(raw_seg_path, exist_ok=1)
+                os.makedirs(raw_seg_path, exist_ok=True)
 
                 raw_seg_src_files = [linux_path(raw_seg_path, k) for k in _seg_src_fnames]
 
@@ -313,12 +358,11 @@ def _convert_dataset(params):
 
             n_seg_src_files = len(raw_seg_src_fnames)
 
-            assert n_img_files == n_seg_src_files, "mismatch between number of source and segmentation images"
+            assert n_seg_src_files == n_frames, "mismatch between number of source and segmentation images"
 
             raw_seg_src_fnames.sort()
 
-            if params.shuffle:
-                raw_seg_src_fnames = [raw_seg_src_fnames[i] for i in rand_indices]
+            raw_seg_src_fnames = [raw_seg_src_fnames[i] for i in img_indices]
 
             raw_seg_src_files = [linux_path(raw_seg_path, k) for k in raw_seg_src_fnames]
 
@@ -333,13 +377,13 @@ def _convert_dataset(params):
     if train_seg_files:
         train_output_dir = linux_path(output_dir, 'train')
         print('saving train tfrecords to {}'.format(train_output_dir))
-        os.makedirs(train_output_dir, exist_ok=1)
+        os.makedirs(train_output_dir, exist_ok=True)
         create_tfrecords(train_img_files, train_seg_files, params.num_shards,
                          params.db_split, train_output_dir)
 
     if test_img_files:
         test_output_dir = linux_path(output_dir, 'test')
-        os.makedirs(test_output_dir, exist_ok=1)
+        os.makedirs(test_output_dir, exist_ok=True)
         print('saving test tfrecords to {}'.format(test_output_dir))
         create_tfrecords(test_img_files, test_seg_files, params.num_shards,
                          params.db_split, test_output_dir)

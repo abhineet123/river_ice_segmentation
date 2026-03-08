@@ -1,12 +1,32 @@
+https://www.rapidtables.com/web/color/RGB_Color.html
+
+% metric='tp_fp_uex';
+% metric='roc_auc_uex';
+
+% metric='auc_roc';
+% metric='auc';
+% metric='auc_ap';
+% metric='fpr_fnr';
+% metric='fpr_fnr_sub';
+% metric='fnr';
+% metric='auc_ap_fpr_fnr';
+
+% metric='auc_partial';
+% metric='auc_uex-iw';
+
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %{
 export_fig 'C:\UofA\PhD\Reports\221121_ipsc_paper\swin.png' -transparent
 export_fig 'C:\UofA\PhD\Reports\221121_ipsc_paper\idol.png' -transparent
 
+bar_plot=0;
+
 rec_prec_mode = 0: plot each column as one line
     first line: plot title
     second line: x-label
     y_label is the concatenation of legend entries
+	first column is the x ticks (after commenting out x_limits)
 
 rec_prec_mode > 0 and thresh_mode > 0: plot triplets of columns
     conf_thresh: column 1, rec: column 2, prec: column 3
@@ -30,5 +50,9 @@ rec_prec_mode > 0 and thresh_mode > 0: plot triplets of columns
 thresh_mode = 0: 
 	rec_prec_mode = 2	
 		plot pairs of columns - first col on x axis, second on y axis
+
+bar plot
+	each row makes one group of bars
+	each column makes one bar in each group and one legend entry
 %}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

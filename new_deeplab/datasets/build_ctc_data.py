@@ -27,7 +27,7 @@ from tqdm import tqdm
 
 import paramparse
 
-from ctc_info import CTCInfo
+from db_info import CTCInfo
 import build_data
 
 

@@ -1,0 +1,134 @@
+background	black
+person	160_140_100
+bicycle	180_140_120
+car	180_100_160
+motorcycle	100_140_120
+airplane	200_180_180
+bus	140_160_200
+train	180_200_160
+truck	100_200_120
+boat	100_100_180
+traffic light	140_180_100
+fire hydrant	160_180_200
+stop sign	160_180_100
+parking meter	100_100_140
+bench	120_100_140
+bird	200_140_200
+cat	140_200_160
+dog	100_180_100
+horse	180_180_200
+sheep	140_180_120
+cow	180_160_180
+elephant	180_120_140
+bear	100_100_100
+zebra	200_140_100
+giraffe	100_200_180
+backpack	100_160_180
+umbrella	140_140_200
+handbag	200_100_100
+tie	200_160_200
+suitcase	200_140_120
+frisbee	120_100_160
+skis	160_140_120
+snowboard	200_200_120
+sports ball	140_160_140
+kite	200_200_160
+baseball bat	180_200_200
+baseball glove	100_180_160
+skateboard	140_160_120
+surfboard	160_100_160
+tennis racket	160_120_160
+bottle	180_180_180
+wine glass	100_140_200
+cup	180_160_100
+fork	140_180_200
+knife	140_160_160
+spoon	120_160_140
+bowl	140_140_120
+banana	140_200_120
+apple	100_160_140
+sandwich	160_160_100
+orange	120_200_140
+broccoli	140_180_180
+carrot	200_200_180
+hot dog	200_160_180
+pizza	140_100_100
+donut	120_100_120
+cake	100_180_200
+chair	200_200_140
+couch	180_120_200
+potted plant	140_180_140
+bed	180_200_180
+dining table	160_120_180
+toilet	180_160_200
+tv	160_120_200
+laptop	200_100_160
+mouse	180_120_120
+remote	160_160_200
+keyboard	200_160_140
+cell phone	120_100_100
+microwave	180_100_120
+oven	180_120_160
+toaster	180_160_160
+sink	200_180_100
+refrigerator	100_200_200
+book	160_120_140
+clock	160_180_160
+vase	100_120_100
+scissors	140_140_160
+teddy bear	140_120_200
+hair drier	160_180_140
+toothbrush	140_200_100
+banner	100_160_120
+blanket	160_200_120
+bridge	100_180_140
+cardboard	140_120_100
+counter	140_140_180
+curtain	200_200_100
+door-stuff	120_200_100
+floor-wood	200_120_120
+flower	160_160_120
+fruit	180_180_100
+gravel	180_160_120
+house	200_140_180
+light	140_180_160
+mirror-stuff	180_140_200
+net	180_140_100
+pillow	140_160_180
+platform	100_160_100
+playingfield	120_120_180
+railroad	100_120_200
+river	140_140_140
+road	160_140_140
+roof	160_100_140
+sand	120_140_200
+sea	120_160_120
+shelf	200_120_180
+snow	180_120_180
+stairs	120_160_180
+tent	120_180_160
+towel	160_200_140
+wall-brick	180_180_160
+wall-stone	160_140_160
+wall-tile	100_140_180
+wall-wood	160_120_100
+water-other	140_140_100
+window-blind	120_200_200
+window-other	140_100_200
+tree-merged	160_200_180
+fence-merged	120_120_140
+ceiling-merged	120_200_180
+sky-other-merged	140_100_160
+cabinet-merged	200_120_200
+table-merged	200_160_160
+floor-other-merged	100_180_180
+pavement-merged	160_180_180
+mountain-merged	120_180_200
+grass-merged	180_120_100
+dirt-merged	200_120_100
+paper-merged	140_200_200
+food-other-merged	200_100_200
+building-other-merged	120_140_180
+rock-merged	100_180_120
+wall-other-merged	180_100_200
+rug-merged	160_100_120
