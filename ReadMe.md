@@ -44,6 +44,10 @@ If a command does not work, the command corresponding to some experiment cannot 
 
 All the accompanying data is available at [IEEE DataPort](http://dx.doi.org/10.21227/ebax-1h44)
 
+Supplementary results videos and images are available in our [hugging face repo](https://huggingface.co/abhineet123/river_ice_segmentation):
+- [videos](https://huggingface.co/abhineet123/river_ice_segmentation/tree/main/supplementary/results_videos)
+- [images](https://huggingface.co/abhineet123/river_ice_segmentation/resolve/main/supplementary/results_images.zip)
+
 All commands assume that the data is present under _/data/617/_.
 
 The code and data are released

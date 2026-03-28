@@ -9,8 +9,15 @@
         - [on-val       @ r-640-sub-8-lac-fbb/train](#on_val___r_640_sub_8_lac_fbb_trai_n_)
             - [gt_80       @ on-val/r-640-sub-8-lac-fbb/train](#gt_80___on_val_r_640_sub_8_lac_fbb_train_)
     - [r-1280_640-p-640-sub-8-lac-fbb       @ train](#r_1280_640_p_640_sub_8_lac_fbb___trai_n_)
+        - [on-train       @ r-1280_640-p-640-sub-8-lac-fbb/train](#on_train___r_1280_640_p_640_sub_8_lac_fbb_train_)
         - [on-val       @ r-1280_640-p-640-sub-8-lac-fbb/train](#on_val___r_1280_640_p_640_sub_8_lac_fbb_train_)
             - [gt_80       @ on-val/r-1280_640-p-640-sub-8-lac-fbb/train](#gt_80___on_val_r_1280_640_p_640_sub_8_lac_fbb_trai_n_)
+    - [r-1280_640-p-640-sub-5-lac-fbb       @ train](#r_1280_640_p_640_sub_5_lac_fbb___trai_n_)
+        - [on-train       @ r-1280_640-p-640-sub-5-lac-fbb/train](#on_train___r_1280_640_p_640_sub_5_lac_fbb_train_)
+        - [on-val       @ r-1280_640-p-640-sub-5-lac-fbb/train](#on_val___r_1280_640_p_640_sub_5_lac_fbb_train_)
+    - [r-1280_640-p-640-sub-5-lac       @ train](#r_1280_640_p_640_sub_5_lac___trai_n_)
+        - [on-train       @ r-1280_640-p-640-sub-5-lac/train](#on_train___r_1280_640_p_640_sub_5_lac_train_)
+        - [on-val       @ r-1280_640-p-640-sub-5-lac/train](#on_val___r_1280_640_p_640_sub_5_lac_train_)
 - [train-rfm](#train_rfm_)
     - [p-1024-sub-8-lac-fbb       @ train-rfm](#p_1024_sub_8_lac_fbb___train_rf_m_)
         - [on-train       @ p-1024-sub-8-lac-fbb/train-rfm](#on_train___p_1024_sub_8_lac_fbb_train_rfm_)
@@ -62,6 +69,9 @@ python stitch.py cfg=ctscp:val:r-80:batch-32:logits:vis-0:img:_in_-resnet_640_ct
 <a id="r_1280_640_p_640_sub_8_lac_fbb___trai_n_"></a>
 ## r-1280_640-p-640-sub-8-lac-fbb       @ train-->stitch-ctscp
 <a id="on_train___r_1280_640_p_640_sub_8_lac_fbb_train_"></a>
+<a id="on_train___r_1280_640_p_640_sub_8_lac_fbb_train_"></a>
+### on-train       @ r-1280_640-p-640-sub-8-lac-fbb/train-->stitch-ctscp
+python stitch.py cfg=ctscp:train:r-1280_640:p-640:sub-8:lac:batch-32:logits:vis-0:img:_in_-resnet_640_ctscp-train-resize_1280x640-640_640-640_640-sub_8-lac-batch_80-seq2k-voc8192-fbb-gdez/ckpt-__var__:_out_-ctscp-r-1280_640-p-640-sub-8-lac-fbb-train
 <a id="on_val___r_1280_640_p_640_sub_8_lac_fbb_train_"></a>
 ### on-val       @ r-1280_640-p-640-sub-8-lac-fbb/train-->stitch-ctscp
 python stitch.py cfg=ctscp:val:r-1280_640:p-640:sub-8:lac:batch-16:logits:vis-0:img:_in_-resnet_640_ctscp-train-resize_1280x640-640_640-640_640-sub_8-lac-batch_80-seq2k-voc8192-fbb-gdez/ckpt-__var__:_out_-ctscp-r-1280_640-p-640-sub-8-lac-fbb
@@ -72,6 +82,38 @@ resnet_640_ctscp-train-resize_1280x640-640_640-640_640-sub_8-lac-batch_80-seq2k-
 #### gt_80       @ on-val/r-1280_640-p-640-sub-8-lac-fbb/train-->stitch-ctscp
 python stitch.py cfg=ctscp:val:r-160_80:p-80:lac:batch-16:logits:vis-0:img:_in_-resnet_640_ctscp-train-resize_1280x640-640_640-640_640-sub_8-lac-batch_80-seq2k-voc8192-fbb-gdez/ckpt-152810-ctscp-val-resize_1280x640-640_640-640_640-sub_8-lac/:_out_-ctscp-r-1280_640-p-640-sub-8-lac-fbb-gt_80:dbg
 
+
+on-train       @ r-1280_640-p-640-sub-5-lac/train-->p2s_seg-ctscp
+CUDA_VISIBLE_DEVICES=0 python3 run.py --cfg=configs/config_seg.py  --j5=m-resnet_640_ctscp-train-resize_1280x640-640_640-640_640-sub_5-lac-batch_32-seq3k-voc19b-gdez,_eval_,ctscp-train,batch-16,save-vis-0,dbg-0,dyn-1,seg-r-1280_640:p-640:sub-5,no_vid,logits
+
+<a id="r_1280_640_p_640_sub_5_lac_fbb___trai_n_"></a>
+## r-1280_640-p-640-sub-5-lac-fbb       @ train-->stitch-ctscp
+<a id="on_train___r_1280_640_p_640_sub_8_lac_fbb_train_"></a>
+<a id="on_train___r_1280_640_p_640_sub_5_lac_fbb_train_"></a>
+### on-train       @ r-1280_640-p-640-sub-5-lac-fbb/train-->stitch-ctscp
+python stitch.py cfg=ctscp:train:r-1280_640:p-640:sub-5:lac:batch-32:logits:vis-0:img:_in_-resnet_640_ctscp-train-resize_1280x640-640_640-640_640-sub_5-lac-batch_40-seq3k-voc19b-fbb-gdez/ckpt-__var__:_out_-ctscp-r-1280_640-p-640-sub-5-lac-fbb-train
+<a id="on_val___r_1280_640_p_640_sub_5_lac_fbb_train_"></a>
+### on-val       @ r-1280_640-p-640-sub-5-lac-fbb/train-->stitch-ctscp
+python stitch.py cfg=ctscp:val:r-1280_640:p-640:sub-5:lac:batch-16:logits:vis-0:img:_in_-resnet_640_ctscp-train-resize_1280x640-640_640-640_640-sub_5-lac-batch_40-seq3k-voc19b-fbb-gdez/ckpt-__var__:_out_-ctscp-r-1280_640-p-640-sub-5-lac-fbb
+```
+resnet_640_ctscp-train-resize_1280x640-640_640-640_640-sub_5-lac-batch_40-seq3k-voc19b-fbb-gdez/ckpt-*-ctscp-val-resize_1280x640-640_640-640_640-sub_5-lac/masks-batch_16
+```
+
+<a id="r_1280_640_p_640_sub_5_lac___trai_n_"></a>
+## r-1280_640-p-640-sub-5-lac       @ train-->stitch-ctscp
+<a id="on_train___r_1280_640_p_640_sub_8_lac_fbb_train_"></a>
+<a id="on_train___r_1280_640_p_640_sub_5_lac_train_"></a>
+### on-train       @ r-1280_640-p-640-sub-5-lac/train-->stitch-ctscp
+python stitch.py cfg=ctscp:train:r-1280_640:p-640:sub-5:lac:batch-16:logits:vis-0:img:_in_-resnet_640_ctscp-train-resize_1280x640-640_640-640_640-sub_5-lac-batch_32-seq3k-voc19b-gdez/ckpt-__var__:_out_-ctscp-r-1280_640-p-640-sub-5-lac-train
+```
+resnet_640_ctscp-train-resize_1280x640-640_640-640_640-sub_5-lac-batch_32-seq3k-voc19b-gdez/ckpt-*-ctscp-train-resize_1280x640-640_640-640_640-sub_5-lac/masks-batch_16
+
+resnet_640_ctscp-train-resize_1280x640-640_640-640_640-sub_5-lac-batch_32-seq3k-voc19b-gdez/ckpt-*-ctscp-train-resize_1280x640-640_640-640_640-sub_5-lac/masks-batch_16
+
+```
+<a id="on_val___r_1280_640_p_640_sub_5_lac_train_"></a>
+### on-val       @ r-1280_640-p-640-sub-5-lac/train-->stitch-ctscp
+python stitch.py cfg=ctscp:val:r-1280_640:p-640:sub-5:lac:batch-16:logits:vis-0:img:_in_-resnet_640_ctscp-train-resize_1280x640-640_640-640_640-sub_5-lac-batch_32-seq3k-voc19b-gdez/ckpt-__var__:_out_-ctscp-r-1280_640-p-640-sub-5-lac
 
 <a id="train_rfm_"></a>
 # train-rfm
